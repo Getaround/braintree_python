@@ -57,7 +57,7 @@ class Http(object):
             if self.environment.is_ssl:
                 self.__verify_ssl()
 
-            url = self.environment.protocol + self.environment.server + Configuration.base_merchant_path() + path
+            url = self.environment.protocol + self.environment.server + self.config.base_merchant_path() + path
             payload = params and XmlUtil.xml_from_dict(params)
             response = urlfetch.fetch(  url     = url,
                                         payload = payload,
