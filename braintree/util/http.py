@@ -50,31 +50,58 @@ class Http(object):
         return self.__http_do("PUT", path, params)
 
     def __http_do(self, http_verb, path, params=None):
-        if self.environment.is_ssl:
-            self.__verify_ssl()
-            conn = httplib.HTTPSConnection(self.environment.server, self.environment.port)
-        else:
-            conn = httplib.HTTPConnection(self.environment.server, self.environment.port)
 
-        conn.request(
-            http_verb,
-            self.config.base_merchant_path() + path,
-            params and XmlUtil.xml_from_dict(params),
-            self.__headers()
-        )
-        response = conn.getresponse()
-        status = response.status
+        try:
 
-        if Http.is_error_status(status):
-            conn.close()
-            Http.raise_exception_from_status(status)
-        else:
-            data = response.read()
-            conn.close()
-            if len(data.strip()) == 0:
-                return {}
+            from google.appengine.api import urlfetch
+            if self.environment.is_ssl:
+                self.__verify_ssl()
+
+            url = self.environment.protocol + self.environment.server + Configuration.base_merchant_path() + path
+            payload = params and XmlUtil.xml_from_dict(params)
+            response = urlfetch.fetch(  url     = url,
+                                        payload = payload,
+                                        method  = http_verb,
+                                        headers = self.__headers(),
+                                        deadline= 10  )
+
+            status = response.status_code
+            if Http.is_error_status(status):
+                Http.raise_exception_from_status(status)
             else:
-                return XmlUtil.dict_from_xml(data)
+                data = response.content
+                if len(data.strip()) == 0:
+                    return {}
+                else:
+                    return XmlUtil.dict_from_xml(data)
+
+        except ImportError:
+
+            if self.environment.is_ssl:
+                self.__verify_ssl()
+                conn = httplib.HTTPSConnection(self.environment.server, self.environment.port)
+            else:
+                conn = httplib.HTTPConnection(self.environment.server, self.environment.port)
+
+            conn.request(
+                http_verb,
+                self.config.base_merchant_path() + path,
+                params and XmlUtil.xml_from_dict(params),
+                self.__headers()
+            )
+            response = conn.getresponse()
+            status = response.status
+
+            if Http.is_error_status(status):
+                conn.close()
+                Http.raise_exception_from_status(status)
+            else:
+                data = response.read()
+                conn.close()
+                if len(data.strip()) == 0:
+                    return {}
+                else:
+                    return XmlUtil.dict_from_xml(data)
 
     def __authorization_header(self):
         return "Basic " + base64.encodestring(self.config.public_key + ":" + self.config.private_key).strip()
