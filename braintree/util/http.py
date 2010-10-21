@@ -63,7 +63,7 @@ class Http(object):
                                         payload = payload,
                                         method  = http_verb,
                                         headers = self.__headers(),
-                                        deadline= 10  )
+                                        deadline= Configuration.request_timeout )
 
             status = response.status_code
             if Http.is_error_status(status):
