@@ -41,7 +41,7 @@ class Configuration(object):
         Configuration.public_key = public_key
         Configuration.private_key = private_key
         Configuration.use_unsafe_ssl = False
-        Configuration.request_timeout = 10
+        Configuration.request_timeout = 60
 
     @staticmethod
     def gateway():
